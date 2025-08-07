@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spreadsheet Tools</title>
+    <title>Function Highlighter Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS library for reading and writing Excel files -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -12,46 +12,13 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        .tab-btn {
-            padding: 0.75rem 1.5rem;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-            font-weight: 500;
-            color: #64748b;
-        }
-        .tab-btn.active {
-            color: #0f172a;
-            border-bottom-color: #2563eb;
-        }
-        .table-cell {
-            padding: 12px 16px;
-            border: 1px solid #e2e8f0;
-            font-size: 0.875rem;
-            white-space: pre-wrap;
-            word-break: break-all;
-            vertical-align: middle;
-        }
-        .table-header {
-            background-color: #f8fafc;
-            font-weight: 600;
-            color: #475569;
-        }
-        .copy-btn {
-            cursor: pointer;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-            vertical-align: middle;
-        }
-        .copy-btn:hover {
-            opacity: 1;
-        }
         .file-upload-label {
              display: flex;
              flex-direction: column;
              align-items: center;
              justify-content: center;
              width: 100%;
+             height: 12rem; /* 192px */
              border: 2px dashed #d1d5db;
              border-radius: 0.5rem;
              cursor: pointer;
@@ -61,355 +28,178 @@
         .file-upload-label:hover {
             background-color: #f3f4f6;
         }
-        .modal-overlay {
-            transition: opacity 0.3s ease;
-        }
-        .modal-content {
-            transition: transform 0.3s ease;
-        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
-    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-7xl">
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-4xl">
         <!-- Header Section -->
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Spreadsheet Tools</h1>
-            <p class="mt-2 text-lg text-gray-600">Convert formulas or create Excel files from text.</p>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Function Highlighter</h1>
+            <p class="mt-2 text-lg text-gray-600">Find and highlight cells with specific functions in your Excel files.</p>
         </header>
 
         <!-- Main Application Card -->
-        <div class="bg-white rounded-xl shadow-lg border border-gray-200">
-            <!-- Tab Navigation -->
-            <nav class="flex border-b border-gray-200">
-                <button id="tab-formula-converter" class="tab-btn active">Formula Converter</button>
-                <button id="tab-text-to-excel" class="tab-btn">Text to Excel</button>
-            </nav>
+        <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8 border border-gray-200">
+            
+            <!-- Step 1: Upload Spreadsheet -->
+            <div class="mb-6">
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">1. Upload your spreadsheet</h2>
+                <label for="file-upload" class="file-upload-label">
+                    <div class="text-center p-6">
+                        <svg class="w-10 h-10 mb-4 text-gray-500 mx-auto" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
+                        <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                        <p class="text-xs text-gray-500">XLSX file</p>
+                    </div>
+                    <input id="file-upload" type="file" class="hidden" accept=".xlsx"/>
+                </label>
+                <p id="file-name" class="mt-2 text-center text-sm text-gray-500"></p>
+            </div>
 
-            <div class="p-6 sm:p-8">
-                <!-- Formula Converter Tool -->
-                <div id="formula-converter-tool">
-                    <!-- Steps 1-4 for formula converter -->
-                    <div class="mb-6">
-                        <h2 class="text-xl font-semibold text-gray-700 mb-3">1. Upload your spreadsheet</h2>
-                        <label for="file-upload" class="file-upload-label h-48">
-                            <div class="text-center p-6">
-                                <svg class="w-10 h-10 mb-4 text-gray-500 mx-auto" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
-                                <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                                <p class="text-xs text-gray-500">XLSX file to convert</p>
-                            </div>
-                            <input id="file-upload" type="file" class="hidden" accept=".xlsx"/>
-                        </label>
-                        <p id="file-name" class="mt-2 text-center text-sm text-gray-500"></p>
-                    </div>
-                    <div class="mb-6">
-                        <h2 class="text-xl font-semibold text-gray-700 mb-3">2. Choose conversion direction</h2>
-                        <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <label for="to-google" class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition-all">
-                                <input type="radio" id="to-google" name="conversion-direction" value="to-google" class="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500" checked>
-                                <span class="ml-3 text-md font-medium text-gray-700">Excel → Google Sheets</span>
-                            </label>
-                            <label for="to-excel" class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-green-50 hover:border-green-400 transition-all">
-                                <input type="radio" id="to-excel" name="conversion-direction" value="to-excel" class="h-5 w-5 text-green-600 border-gray-300 focus:ring-green-500">
-                                <span class="ml-3 text-md font-medium text-gray-700">Google Sheets → Excel</span>
-                            </label>
-                        </fieldset>
-                    </div>
-                    <div class="mb-6">
-                        <h2 class="text-xl font-semibold text-gray-700 mb-3">3. Upload Mappings File (Optional)</h2>
-                        <label for="mappings-upload" class="file-upload-label h-32">
-                            <div class="text-center p-4">
-                                <svg class="w-8 h-8 mb-3 text-gray-500 mx-auto" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
-                                <p class="text-sm text-gray-500"><span class="font-semibold">Upload mapping file</span></p>
-                                <p class="text-xs text-gray-500">Column A: From Func, Column B: To Func</p>
-                            </div>
-                            <input id="mappings-upload" type="file" class="hidden" accept=".xlsx"/>
-                        </label>
-                        <p id="mappings-file-name" class="mt-2 text-center text-sm text-gray-500"></p>
-                    </div>
-                    <div class="mb-6">
-                        <h2 class="text-xl font-semibold text-gray-700 mb-3">4. Or, Provide Mappings Manually</h2>
-                        <label for="custom-mappings" class="block text-sm font-medium text-gray-600 mb-2">Used if no mapping file is uploaded. One conversion per line: `FromFunc,ToFunc`</label>
-                        <textarea id="custom-mappings" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="CONCAT,CONCATENATE&#10;..."></textarea>
-                    </div>
-                    <div class="text-center">
-                        <button id="convert-btn" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>Convert</button>
-                    </div>
-                </div>
+            <!-- Step 2: Provide Functions to Find -->
+            <div class="mb-6">
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">2. List functions to highlight</h2>
+                <label for="functions-list" class="block text-sm font-medium text-gray-600 mb-2">Enter one function name per line. Case-insensitive.</label>
+                <textarea id="functions-list" rows="6" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="QUERY&#10;IMPORTRANGE&#10;XLOOKUP&#10;..."></textarea>
+            </div>
 
-                <!-- Text to Excel Tool -->
-                <div id="text-to-excel-tool" class="hidden">
-                    <div class="mb-6">
-                        <h2 class="text-xl font-semibold text-gray-700 mb-3">1. Upload your text file</h2>
-                        <label for="text-file-upload" class="file-upload-label h-48">
-                            <div class="text-center p-6">
-                                <svg class="w-10 h-10 mb-4 text-gray-500 mx-auto" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
-                                <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                                <p class="text-xs text-gray-500">TXT, CSV, or TSV file</p>
-                            </div>
-                            <input id="text-file-upload" type="file" class="hidden" accept=".txt,.csv,.tsv"/>
-                        </label>
-                        <p id="text-file-name" class="mt-2 text-center text-sm text-gray-500"></p>
-                    </div>
-                    <div class="text-center">
-                        <button id="text-convert-btn" class="w-full sm:w-auto bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>Convert & Download Excel File</button>
-                    </div>
-                </div>
+            <!-- Step 3: Highlight -->
+            <div class="text-center">
+                 <button id="highlight-btn" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                    Find & Highlight
+                </button>
             </div>
         </div>
 
-        <!-- Results Section for Formula Converter -->
+        <!-- Results Section -->
         <div id="results-container" class="mt-8 hidden">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">Conversion Results</h2>
-            <div id="results-output" class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"></div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Highlighting Results</h2>
+            <div id="results-output" class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <!-- Results will be injected here -->
+            </div>
+            <div id="download-section" class="text-center p-4 mt-4 hidden">
+                <button id="download-btn" class="w-full sm:w-auto bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all">Download Highlighted File</button>
+            </div>
         </div>
         
-        <!-- General Message Box -->
-        <div id="message-box" class="fixed bottom-5 right-5 bg-gray-900 text-white py-2 px-4 rounded-lg shadow-xl transition-opacity duration-300 opacity-0"></div>
-    </div>
-
-    <!-- Modal for Indirect Conversion Details -->
-    <div id="details-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50 opacity-0">
-        <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-lg p-6 transform scale-95">
-            <div class="flex justify-between items-center border-b pb-3 mb-4">
-                <h3 id="modal-title" class="text-xl font-semibold">Conversion Details</h3>
-                <button id="modal-close-btn" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-            </div>
-            <div id="modal-body" class="text-gray-700">
-                <p>Details about the conversion will appear here.</p>
-            </div>
-        </div>
     </div>
 
     <script>
         // --- DOM Element References ---
-        const fileUpload = document.getElementById('file-upload'), fileNameDisplay = document.getElementById('file-name');
-        const mappingsUpload = document.getElementById('mappings-upload'), mappingsFileNameDisplay = document.getElementById('mappings-file-name');
-        const convertBtn = document.getElementById('convert-btn');
-        const resultsContainer = document.getElementById('results-container'), resultsOutput = document.getElementById('results-output');
-        const messageBox = document.getElementById('message-box');
-        const customMappingsInput = document.getElementById('custom-mappings');
-        const textFileUpload = document.getElementById('text-file-upload'), textFileNameDisplay = document.getElementById('text-file-name'), textConvertBtn = document.getElementById('text-convert-btn');
-        const tabFormulaConverter = document.getElementById('tab-formula-converter'), tabTextToExcel = document.getElementById('tab-text-to-excel');
-        const toolFormulaConverter = document.getElementById('formula-converter-tool'), toolTextToExcel = document.getElementById('text-to-excel-tool');
-        const detailsModal = document.getElementById('details-modal'), modalTitle = document.getElementById('modal-title'), modalBody = document.getElementById('modal-body'), modalCloseBtn = document.getElementById('modal-close-btn');
+        const fileUpload = document.getElementById('file-upload');
+        const fileNameDisplay = document.getElementById('file-name');
+        const functionsListInput = document.getElementById('functions-list');
+        const highlightBtn = document.getElementById('highlight-btn');
+        const resultsContainer = document.getElementById('results-container');
+        const resultsOutput = document.getElementById('results-output');
+        const downloadSection = document.getElementById('download-section');
+        const downloadBtn = document.getElementById('download-btn');
 
-        let workbook = null, mappingsWorkbook = null, textFileContent = null;
-
-        // --- Default Mappings with Indirect Conversion Examples ---
-        const excelToGoogleMap = {
-            'CONCAT': 'CONCATENATE',
-            'DATEDIF': { isIndirect: true, newName: 'DATEDIF', message: 'While the function name is the same, Google Sheets\' DATEDIF has a known bug where the "MD" unit can produce incorrect results. Please test your formulas that use this unit carefully after conversion.' },
-            'ISFORMULA': { isIndirect: true, newName: 'ISFORMULA', message: 'This function is available in newer versions of Excel and Google Sheets. Ensure your target version supports it.' }
-        };
-        const googleToExcelMap = {
-            'CONCATENATE': 'CONCAT',
-            'QUERY': { isIndirect: true, newName: null, message: 'Excel does not have a direct equivalent to the QUERY function. You may be able to replicate the functionality using a combination of FILTER, SORT, and other dynamic array functions in newer versions of Excel (Office 365).' },
-            'IMPORTRANGE': { isIndirect: true, newName: null, message: 'Excel cannot directly import ranges from other Google Sheets. The recommended approach is to publish the Google Sheet as a CSV or use Power Query (Get & Transform Data) in Excel to connect to the web-published data.' }
-        };
+        let originalWorkbook = null;
+        let highlightedWorkbook = null;
 
         // --- Event Listeners ---
-        fileUpload.addEventListener('change', (e) => handleFile(e, 'main'), false);
-        mappingsUpload.addEventListener('change', (e) => handleFile(e, 'mappings'), false);
-        convertBtn.addEventListener('click', convertFile, false);
-        textFileUpload.addEventListener('change', handleTextFile, false);
-        textConvertBtn.addEventListener('click', convertTextToExcel, false);
-        tabFormulaConverter.addEventListener('click', () => switchTab('formula'));
-        tabTextToExcel.addEventListener('click', () => switchTab('text'));
-        modalCloseBtn.addEventListener('click', hideModal);
-        detailsModal.addEventListener('click', (e) => { if(e.target === detailsModal) hideModal(); });
+        fileUpload.addEventListener('change', handleFile, false);
+        highlightBtn.addEventListener('click', processFile, false);
+        downloadBtn.addEventListener('click', downloadHighlightedFile, false);
 
-        // --- Functions ---
-        
-        function switchTab(toolName) {
-            if (toolName === 'formula') {
-                toolFormulaConverter.classList.remove('hidden');
-                toolTextToExcel.classList.add('hidden');
-                tabFormulaConverter.classList.add('active');
-                tabTextToExcel.classList.remove('active');
-                if (resultsOutput.innerHTML) resultsContainer.classList.remove('hidden');
-            } else {
-                toolFormulaConverter.classList.add('hidden');
-                toolTextToExcel.classList.remove('hidden');
-                tabFormulaConverter.classList.remove('active');
-                tabTextToExcel.classList.add('active');
-                resultsContainer.classList.add('hidden');
-            }
-        }
-
-        function handleFile(e, fileType) {
+        /**
+         * Handles the file upload event.
+         */
+        function handleFile(e) {
             const file = e.target.files[0];
             if (!file) return;
+
             const reader = new FileReader();
             reader.onload = (event) => {
                 const data = new Uint8Array(event.target.result);
-                if (fileType === 'main') {
-                    workbook = XLSX.read(data, { type: 'array', cellFormula: true });
-                    fileNameDisplay.textContent = `Selected file: ${file.name}`;
-                    convertBtn.disabled = false;
-                } else if (fileType === 'mappings') {
-                    mappingsWorkbook = XLSX.read(data, { type: 'array' });
-                    mappingsFileNameDisplay.textContent = `Mappings file: ${file.name}`;
-                }
+                originalWorkbook = XLSX.read(data, { type: 'array', cellFormula: true });
+                fileNameDisplay.textContent = `Selected file: ${file.name}`;
+                highlightBtn.disabled = false;
             };
             reader.readAsArrayBuffer(file);
         }
 
-        function handleTextFile(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                textFileContent = event.target.result;
-                textFileNameDisplay.textContent = `Selected file: ${file.name}`;
-                textConvertBtn.disabled = false;
-            };
-            reader.readAsText(file);
-        }
-
-        function convertTextToExcel() {
-            if (!textFileContent) { alert("Please upload a text file first."); return; }
-            const lines = textFileContent.trim().split('\n');
-            let delimiter = ',';
-            if (lines.length > 0 && lines[0].includes('\t')) delimiter = '\t';
-            else if (lines.length > 0 && lines[0].includes(';')) delimiter = ';';
-            const dataArray = lines.map(line => line.split(delimiter));
-            const worksheet = XLSX.utils.aoa_to_sheet(dataArray);
-            const newWorkbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(newWorkbook, worksheet, "Sheet1");
-            XLSX.writeFile(newWorkbook, "converted_from_text.xlsx");
-            showMessageBox("Excel file downloaded!");
-        }
-        
-        function parseMappings(mapSource, direction) {
-            const map = {};
-            mapSource.forEach(row => {
-                if (row && row.length >= 2) {
-                    const fromFunc = String(row[0]).trim().toUpperCase();
-                    const toFunc = String(row[1]).trim().toUpperCase();
-                    if (fromFunc && toFunc) {
-                        map[direction === 'to-google' ? fromFunc : toFunc] = direction === 'to-google' ? toFunc : fromFunc;
-                    }
-                }
-            });
-            return map;
-        }
-
-        function convertFile() {
-            if (!workbook) { alert("Please upload a spreadsheet to convert."); return; }
-            const direction = document.querySelector('input[name="conversion-direction"]:checked').value;
-            const customMappingsText = customMappingsInput.value;
-            let conversionMap;
-
-            if (mappingsWorkbook) {
-                const firstSheetName = mappingsWorkbook.SheetNames[0];
-                const worksheet = mappingsWorkbook.Sheets[firstSheetName];
-                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                conversionMap = parseMappings(rows, direction);
-            } else if (customMappingsText.trim() !== '') {
-                const rows = customMappingsText.split('\n').map(line => line.split(','));
-                conversionMap = parseMappings(rows, direction);
-            } else {
-                conversionMap = direction === 'to-google' ? excelToGoogleMap : googleToExcelMap;
+        /**
+         * Main function to process the spreadsheet.
+         * It finds cells with specified functions and highlights them.
+         */
+        function processFile() {
+            if (!originalWorkbook) {
+                alert("Please upload a spreadsheet first.");
+                return;
             }
 
-            let resultsHtml = `<table class="w-full"><thead><tr><th class="table-cell table-header text-left">Sheet</th><th class="table-cell table-header text-left">Cell</th><th class="table-cell table-header text-left">Original Formula</th><th class="table-cell table-header text-left">Converted Formula</th></tr></thead><tbody>`;
-            let hasFormulas = false;
-            workbook.SheetNames.forEach(sheetName => {
-                const worksheet = workbook.Sheets[sheetName];
+            const functionsToFind = functionsListInput.value
+                .split('\n')
+                .map(f => f.trim().toUpperCase())
+                .filter(f => f.length > 0);
+
+            if (functionsToFind.length === 0) {
+                alert("Please provide a list of functions to highlight.");
+                return;
+            }
+
+            // Create a regex to find any of the functions as whole words, followed by a parenthesis.
+            // e.g., /\b(QUERY|IMPORTRANGE|XLOOKUP)\(/i
+            const functionRegex = new RegExp('\\b(' + functionsToFind.join('|') + ')\\(', 'i');
+            
+            // Create a deep copy of the workbook to modify. This preserves all original data and styling.
+            highlightedWorkbook = JSON.parse(JSON.stringify(originalWorkbook));
+
+            let highlightedCells = [];
+            const redFillStyle = {
+                fill: {
+                    patternType: "solid",
+                    fgColor: { rgb: "FFFF0000" } // Red
+                }
+            };
+
+            highlightedWorkbook.SheetNames.forEach(sheetName => {
+                const worksheet = highlightedWorkbook.Sheets[sheetName];
                 for (const cellAddress in worksheet) {
-                    if (worksheet[cellAddress].f) {
-                        hasFormulas = true;
-                        const originalFormula = worksheet[cellAddress].f;
-                        const convertedFormula = translateFormula(originalFormula, conversionMap);
-                        let actionButtons = '';
-                        if (convertedFormula.isIndirect) {
-                            const escapedMessage = convertedFormula.message.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                            actionButtons += `<button onclick="showModal('Conversion Details', '${escapedMessage}')" class="ml-2 bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded-full hover:bg-blue-200">Details</button>`;
-                        }
-                        if (convertedFormula.isTranslatable) {
-                            actionButtons += `<button class="ml-2 copy-btn" onclick="copyToClipboard('${CSS.escape(convertedFormula.text)}')" title="Copy formula"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="inline-block" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3z"/></svg></button>`;
-                        }
-                        resultsHtml += `<tr><td class="table-cell">${sheetName}</td><td class="table-cell font-mono">${cellAddress}</td><td class="table-cell font-mono">${originalFormula}</td><td class="table-cell font-mono"><div class="flex items-center"><span>${convertedFormula.html}</span><span class="ml-auto flex-shrink-0">${actionButtons}</span></div></td></tr>`;
+                    const cell = worksheet[cellAddress];
+                    // Check if the cell has a formula and it matches one of the functions to find
+                    if (cell.f && functionRegex.test(cell.f)) {
+                        // Apply the red fill style
+                        cell.s = { ...cell.s, ...redFillStyle };
+                        highlightedCells.push(`${sheetName}!${cellAddress}`);
                     }
                 }
             });
-            resultsHtml += `</tbody></table>`;
-            resultsOutput.innerHTML = hasFormulas ? resultsHtml : `<div class="p-8 text-center text-gray-500">No formulas found in the uploaded file.</div>`;
+
+            // Display the results to the user
+            displayResults(highlightedCells);
+        }
+        
+        /**
+         * Shows the results section with a list of highlighted cells.
+         * @param {string[]} cells - An array of cell addresses that were highlighted.
+         */
+        function displayResults(cells) {
             resultsContainer.classList.remove('hidden');
+            
+            if (cells.length > 0) {
+                resultsOutput.innerHTML = `<p class="font-semibold mb-2">Found and highlighted ${cells.length} cell(s):</p>
+                                           <ul class="list-disc list-inside text-gray-600 font-mono text-sm">${cells.map(c => `<li>${c}</li>`).join('')}</ul>`;
+                downloadSection.classList.remove('hidden');
+            } else {
+                resultsOutput.innerHTML = `<p class="text-gray-600">No cells found containing the specified functions.</p>`;
+                downloadSection.classList.add('hidden');
+            }
+            
             resultsContainer.scrollIntoView({ behavior: 'smooth' });
         }
 
-        function translateFormula(formula, map) {
-            const functionRegex = /[A-Z][A-Z0-9\.]*\(/ig;
-            let finalResult = { isIndirect: false, message: '', isTranslatable: true };
-
-            const translatedHtml = formula.replace(functionRegex, (match) => {
-                const functionName = match.slice(0, -1).toUpperCase();
-                if (map.hasOwnProperty(functionName)) {
-                    const mapping = map[functionName];
-                    if (typeof mapping === 'object' && mapping !== null) { // Indirect conversion
-                        finalResult.isIndirect = true;
-                        finalResult.message = mapping.message;
-                        const newName = mapping.newName;
-                        if (newName) {
-                            return `<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">${newName}</span>(`;
-                        } else {
-                            finalResult.isTranslatable = false;
-                            return `<span class="bg-red-100 text-red-700 px-2 py-1 rounded">${functionName}</span>(`;
-                        }
-                    } else { // Direct string conversion
-                        return `<span class="bg-green-100 text-green-700 px-2 py-1 rounded">${mapping}</span>(`;
-                    }
-                }
-                return match;
-            });
-            
-            const plainText = translatedHtml.replace(/<[^>]*>/g, '');
-            finalResult.html = translatedHtml;
-            finalResult.text = plainText;
-            return finalResult;
-        }
-        
-        function copyToClipboard(text) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                showMessageBox("Copied to clipboard!");
-            } catch (err) {
-                console.error('Fallback: Oops, unable to copy', err);
+        /**
+         * Triggers the download of the modified .xlsx file.
+         */
+        function downloadHighlightedFile() {
+            if (highlightedWorkbook) {
+                XLSX.writeFile(highlightedWorkbook, "highlighted_file.xlsx");
+            } else {
+                alert("No highlighted file is available. Please process a file first.");
             }
-            document.body.removeChild(textArea);
-        }
-
-        function showModal(title, message) {
-            modalTitle.textContent = title;
-            modalBody.innerHTML = message;
-            detailsModal.classList.remove('hidden');
-            setTimeout(() => {
-                detailsModal.classList.remove('opacity-0');
-                detailsModal.querySelector('.modal-content').classList.remove('scale-95');
-            }, 10);
-        }
-        
-        function hideModal() {
-            detailsModal.classList.add('opacity-0');
-            detailsModal.querySelector('.modal-content').classList.add('scale-95');
-            setTimeout(() => {
-                detailsModal.classList.add('hidden');
-            }, 300);
-        }
-
-        function showMessageBox(message) {
-            messageBox.textContent = message;
-            messageBox.classList.remove('opacity-0');
-            setTimeout(() => {
-                messageBox.classList.add('opacity-0');
-            }, 2500);
         }
     </script>
 </body>
