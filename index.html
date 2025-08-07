@@ -226,7 +226,8 @@ WRAPROWS</textarea>
             const reader = new FileReader();
             reader.onload = (event) => {
                 const data = new Uint8Array(event.target.result);
-                originalWorkbook = XLSX.read(data, { type: 'array', cellFormula: true });
+                // Read with cellStyles to preserve colors, and cellFormula to get formulas.
+                originalWorkbook = XLSX.read(data, { type: 'array', cellFormula: true, cellStyles: true });
                 fileNameDisplay.textContent = `Selected file: ${file.name}`;
                 processBtn.disabled = false;
             };
@@ -272,12 +273,27 @@ WRAPROWS</textarea>
                             processedItems.push(`${sheetName}!${cellAddress}`);
                         } else { // 'wrap' action
                             const originalFormula = cell.f;
-                            // Escape double quotes inside the formula for use in an Excel string
+                            const originalValue = originalWorkbook.Sheets[sheetName][cellAddress]?.v;
+
+                            let fallbackValue;
+                            if (originalValue === undefined || originalValue === null) {
+                                fallbackValue = '""'; // Default to empty string
+                            } else if (typeof originalValue === 'string') {
+                                // Escape double quotes for use in an Excel string and wrap in quotes
+                                fallbackValue = `"${originalValue.replace(/"/g, '""')}"`;
+                            } else if (typeof originalValue === 'number' || typeof originalValue === 'boolean') {
+                                fallbackValue = originalValue; // Numbers and booleans are fine as-is
+                            } else {
+                                fallbackValue = '"#VALUE!"'; // Fallback for errors or other types
+                            }
+
+                            // Escape double quotes inside the formula string itself
                             const escapedFormula = originalFormula.replace(/"/g, '""');
-                            // Construct the new wrapper formula
-                            const newFormula = `=IFERROR(__xludf.DUMMYFUNCTION("${escapedFormula}"), "#UNSUPPORTED_GSHEETS_FUNC!")`;
+                            // Construct the new wrapper formula with the original value as the fallback
+                            const newFormula = `=IFERROR(__xludf.DUMMYFUNCTION("${escapedFormula}"), ${fallbackValue})`;
+                            
                             cell.f = newFormula;
-                            // Delete old value to force recalculation
+                            // Delete old value to force recalculation by Excel
                             delete cell.v; 
                             processedItems.push({ sheet: sheetName, cell: cellAddress, original: originalFormula, converted: newFormula });
                         }
@@ -332,7 +348,8 @@ WRAPROWS</textarea>
          */
         function downloadModifiedFile() {
             if (modifiedWorkbook) {
-                XLSX.writeFile(modifiedWorkbook, "modified_file.xlsx");
+                // The {cellStyles: true} option is crucial for preserving colors
+                XLSX.writeFile(modifiedWorkbook, "modified_file.xlsx", {cellStyles: true});
             } else {
                 alert("No modified file is available. Please process a file first.");
             }
