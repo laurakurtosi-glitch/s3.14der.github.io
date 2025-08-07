@@ -292,11 +292,13 @@ WRAPROWS</textarea>
                             delete cell.v; 
                             processedItems.push({ sheet: sheetName, cell: cellAddress, original: originalFormula, converted: newFormula });
                         
-                        } else { // wrap-gsheets: Replace with static value and add comment
+                        } else { // wrap-gsheets: Replace with static value
                             // 1. Remove the formula
                             delete cell.f;
+                            // 2. Remove any existing comment to avoid confusion
+                            delete cell.c;
 
-                            // 2. Set the static value and type
+                            // 3. Set the static value and type
                             cell.v = originalValue;
                             if (typeof originalValue === 'string') cell.t = 's';
                             else if (typeof originalValue === 'number') cell.t = 'n';
@@ -307,11 +309,7 @@ WRAPROWS</textarea>
                                 cell.t = 's';
                             }
                             
-                            // 3. Add the original formula as a comment
-                            if (!cell.c) cell.c = [];
-                            cell.c.push({a: "Converter", t: originalFormula});
-
-                            processedItems.push({ sheet: sheetName, cell: cellAddress, original: originalFormula, converted: `Value: ${cell.v} (Formula moved to comment)` });
+                            processedItems.push({ sheet: sheetName, cell: cellAddress, original: originalFormula, converted: `Replaced with value: ${cell.v}` });
                         }
                     }
                 }
