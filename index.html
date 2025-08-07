@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Function Highlighter Tool</title>
+    <title>Function Compatibility Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS library for reading and writing Excel files -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -28,6 +28,17 @@
         .file-upload-label:hover {
             background-color: #f3f4f6;
         }
+        .table-cell {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .table-header {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -35,8 +46,8 @@
     <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-4xl">
         <!-- Header Section -->
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Function Highlighter</h1>
-            <p class="mt-2 text-lg text-gray-600">Find and highlight cells with specific functions in your Excel files.</p>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Function Compatibility Tool</h1>
+            <p class="mt-2 text-lg text-gray-600">Highlight or wrap incompatible functions for Excel.</p>
         </header>
 
         <!-- Main Application Card -->
@@ -55,11 +66,26 @@
                 </label>
                 <p id="file-name" class="mt-2 text-center text-sm text-gray-500"></p>
             </div>
-
-            <!-- Step 2: Provide Functions to Find -->
+            
+            <!-- Step 2: Choose Action -->
             <div class="mb-6">
-                <h2 class="text-xl font-semibold text-gray-700 mb-3">2. List functions to highlight</h2>
-                <label for="functions-list" class="block text-sm font-medium text-gray-600 mb-2">Enter one function name per line. Case-insensitive.</label>
+                 <h2 class="text-xl font-semibold text-gray-700 mb-3">2. Choose an action</h2>
+                 <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label for="action-highlight" class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-red-50 hover:border-red-400 transition-all">
+                        <input type="radio" id="action-highlight" name="action-type" value="highlight" class="h-5 w-5 text-red-600 border-gray-300 focus:ring-red-500" checked>
+                        <span class="ml-3 text-md font-medium text-gray-700">Highlight Incompatible Functions</span>
+                    </label>
+                    <label for="action-wrap" class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition-all">
+                        <input type="radio" id="action-wrap" name="action-type" value="wrap" class="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <span class="ml-3 text-md font-medium text-gray-700">Wrap Functions for Excel</span>
+                    </label>
+                </fieldset>
+            </div>
+
+            <!-- Step 3: Provide Functions to Find -->
+            <div class="mb-6">
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">3. List of incompatible functions</h2>
+                <label for="functions-list" class="block text-sm font-medium text-gray-600 mb-2">These functions will be targeted by the action above. One per line.</label>
                 <textarea id="functions-list" rows="8" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-mono text-sm">ADD
 AMORDEGRC
 ARRAY_CONSTRAIN
@@ -136,9 +162,9 @@ WRAPCOLS
 WRAPROWS</textarea>
             </div>
 
-            <!-- Step 3: Highlight -->
+            <!-- Step 4: Process -->
             <div class="text-center">
-                 <button id="highlight-btn" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                 <button id="process-btn" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
                     Find & Highlight
                 </button>
             </div>
@@ -146,12 +172,12 @@ WRAPROWS</textarea>
 
         <!-- Results Section -->
         <div id="results-container" class="mt-8 hidden">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">Highlighting Results</h2>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Results</h2>
             <div id="results-output" class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
                 <!-- Results will be injected here -->
             </div>
             <div id="download-section" class="text-center p-4 mt-4 hidden">
-                <button id="download-btn" class="w-full sm:w-auto bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all">Download Highlighted File</button>
+                <button id="download-btn" class="w-full sm:w-auto bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all">Download Modified File</button>
             </div>
         </div>
         
@@ -162,19 +188,33 @@ WRAPROWS</textarea>
         const fileUpload = document.getElementById('file-upload');
         const fileNameDisplay = document.getElementById('file-name');
         const functionsListInput = document.getElementById('functions-list');
-        const highlightBtn = document.getElementById('highlight-btn');
+        const processBtn = document.getElementById('process-btn');
         const resultsContainer = document.getElementById('results-container');
         const resultsOutput = document.getElementById('results-output');
         const downloadSection = document.getElementById('download-section');
         const downloadBtn = document.getElementById('download-btn');
+        const actionRadios = document.querySelectorAll('input[name="action-type"]');
 
         let originalWorkbook = null;
-        let highlightedWorkbook = null;
+        let modifiedWorkbook = null;
 
         // --- Event Listeners ---
         fileUpload.addEventListener('change', handleFile, false);
-        highlightBtn.addEventListener('click', processFile, false);
-        downloadBtn.addEventListener('click', downloadHighlightedFile, false);
+        processBtn.addEventListener('click', processFile, false);
+        downloadBtn.addEventListener('click', downloadModifiedFile, false);
+        actionRadios.forEach(radio => radio.addEventListener('change', updateButtonText));
+
+        /**
+         * Updates the main button text based on the selected action.
+         */
+        function updateButtonText() {
+            const selectedAction = document.querySelector('input[name="action-type"]:checked').value;
+            if (selectedAction === 'highlight') {
+                processBtn.textContent = 'Find & Highlight';
+            } else {
+                processBtn.textContent = 'Wrap & Convert';
+            }
+        }
 
         /**
          * Handles the file upload event.
@@ -188,14 +228,13 @@ WRAPROWS</textarea>
                 const data = new Uint8Array(event.target.result);
                 originalWorkbook = XLSX.read(data, { type: 'array', cellFormula: true });
                 fileNameDisplay.textContent = `Selected file: ${file.name}`;
-                highlightBtn.disabled = false;
+                processBtn.disabled = false;
             };
             reader.readAsArrayBuffer(file);
         }
 
         /**
-         * Main function to process the spreadsheet.
-         * It finds cells with specified functions and highlights them.
+         * Main function to process the spreadsheet based on the selected action.
          */
         function processFile() {
             if (!originalWorkbook) {
@@ -209,52 +248,76 @@ WRAPROWS</textarea>
                 .filter(f => f.length > 0);
 
             if (functionsToFind.length === 0) {
-                alert("Please provide a list of functions to highlight.");
+                alert("Please provide a list of functions to target.");
                 return;
             }
 
-            // Create a regex to find any of the functions as whole words, followed by a parenthesis.
-            // e.g., /\b(QUERY|IMPORTRANGE|XLOOKUP)\(/i
-            const functionRegex = new RegExp('\\b(' + functionsToFind.join('|') + ')\\(', 'i');
+            const selectedAction = document.querySelector('input[name="action-type"]:checked').value;
             
-            // Create a deep copy of the workbook to modify. This preserves all original data and styling.
-            highlightedWorkbook = JSON.parse(JSON.stringify(originalWorkbook));
+            // Create a deep copy of the workbook to modify.
+            modifiedWorkbook = JSON.parse(JSON.stringify(originalWorkbook));
+            
+            const functionRegex = new RegExp('\\b(' + functionsToFind.join('|') + ')\\(', 'i');
+            let processedItems = [];
 
-            let highlightedCells = [];
-            const redFillStyle = {
-                fill: {
-                    patternType: "solid",
-                    fgColor: { rgb: "FFFF0000" } // Red
-                }
-            };
-
-            highlightedWorkbook.SheetNames.forEach(sheetName => {
-                const worksheet = highlightedWorkbook.Sheets[sheetName];
+            modifiedWorkbook.SheetNames.forEach(sheetName => {
+                const worksheet = modifiedWorkbook.Sheets[sheetName];
                 for (const cellAddress in worksheet) {
                     const cell = worksheet[cellAddress];
-                    // Check if the cell has a formula and it matches one of the functions to find
                     if (cell.f && functionRegex.test(cell.f)) {
-                        // Apply the red fill style
-                        cell.s = { ...cell.s, ...redFillStyle };
-                        highlightedCells.push(`${sheetName}!${cellAddress}`);
+                        if (selectedAction === 'highlight') {
+                            // Apply red fill style for highlighting
+                            const redFillStyle = { fill: { patternType: "solid", fgColor: { rgb: "FFFF0000" } } };
+                            cell.s = { ...cell.s, ...redFillStyle };
+                            processedItems.push(`${sheetName}!${cellAddress}`);
+                        } else { // 'wrap' action
+                            const originalFormula = cell.f;
+                            // Escape double quotes inside the formula for use in an Excel string
+                            const escapedFormula = originalFormula.replace(/"/g, '""');
+                            // Construct the new wrapper formula
+                            const newFormula = `=IFERROR(__xludf.DUMMYFUNCTION("${escapedFormula}"), "#UNSUPPORTED_GSHEETS_FUNC!")`;
+                            cell.f = newFormula;
+                            // Delete old value to force recalculation
+                            delete cell.v; 
+                            processedItems.push({ sheet: sheetName, cell: cellAddress, original: originalFormula, converted: newFormula });
+                        }
                     }
                 }
             });
 
-            // Display the results to the user
-            displayResults(highlightedCells);
+            displayResults(processedItems, selectedAction);
         }
         
         /**
-         * Shows the results section with a list of highlighted cells.
-         * @param {string[]} cells - An array of cell addresses that were highlighted.
+         * Shows the results section.
+         * @param {Array} items - An array of strings (for highlight) or objects (for wrap).
+         * @param {string} action - The action performed ('highlight' or 'wrap').
          */
-        function displayResults(cells) {
+        function displayResults(items, action) {
             resultsContainer.classList.remove('hidden');
             
-            if (cells.length > 0) {
-                resultsOutput.innerHTML = `<p class="font-semibold mb-2">Found and highlighted ${cells.length} cell(s):</p>
-                                           <ul class="list-disc list-inside text-gray-600 font-mono text-sm">${cells.map(c => `<li>${c}</li>`).join('')}</ul>`;
+            if (items.length > 0) {
+                if (action === 'highlight') {
+                    resultsOutput.innerHTML = `<p class="font-semibold mb-2">Found and highlighted ${items.length} cell(s):</p>
+                                               <ul class="list-disc list-inside text-gray-600 font-mono text-sm">${items.map(c => `<li>${c}</li>`).join('')}</ul>`;
+                } else { // wrap
+                    let tableHtml = `<p class="font-semibold mb-2">Wrapped ${items.length} formula(s):</p>
+                                     <table class="w-full text-left">
+                                       <thead><tr>
+                                         <th class="table-cell table-header">Cell</th>
+                                         <th class="table-cell table-header">Original Formula</th>
+                                         <th class="table-cell table-header">Wrapped Formula</th>
+                                       </tr></thead><tbody>`;
+                    items.forEach(item => {
+                        tableHtml += `<tr>
+                                        <td class="table-cell font-mono">${item.sheet}!${item.cell}</td>
+                                        <td class="table-cell font-mono">${item.original}</td>
+                                        <td class="table-cell font-mono">${item.converted}</td>
+                                      </tr>`;
+                    });
+                    tableHtml += `</tbody></table>`;
+                    resultsOutput.innerHTML = tableHtml;
+                }
                 downloadSection.classList.remove('hidden');
             } else {
                 resultsOutput.innerHTML = `<p class="text-gray-600">No cells found containing the specified functions.</p>`;
@@ -267,11 +330,11 @@ WRAPROWS</textarea>
         /**
          * Triggers the download of the modified .xlsx file.
          */
-        function downloadHighlightedFile() {
-            if (highlightedWorkbook) {
-                XLSX.writeFile(highlightedWorkbook, "highlighted_file.xlsx");
+        function downloadModifiedFile() {
+            if (modifiedWorkbook) {
+                XLSX.writeFile(modifiedWorkbook, "modified_file.xlsx");
             } else {
-                alert("No highlighted file is available. Please process a file first.");
+                alert("No modified file is available. Please process a file first.");
             }
         }
     </script>
