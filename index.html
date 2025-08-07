@@ -81,7 +81,7 @@
                     </label>
                     <label for="action-wrap-gsheets" class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-green-50 hover:border-green-400 transition-all">
                         <input type="radio" id="action-wrap-gsheets" name="action-type" value="wrap-gsheets" class="h-5 w-5 text-green-600 border-gray-300 focus:ring-green-500">
-                        <span class="ml-3 text-md font-medium text-gray-700">Wrap for GSheets (IFERROR)</span>
+                        <span class="ml-3 text-md font-medium text-gray-700">Replace with Value (for GSheets)</span>
                     </label>
                 </fieldset>
             </div>
@@ -218,7 +218,7 @@ WRAPROWS</textarea>
             } else if (selectedAction === 'wrap-excel') {
                 processBtn.textContent = 'Wrap for Excel';
             } else { // wrap-gsheets
-                processBtn.textContent = 'Wrap for Google Sheets';
+                processBtn.textContent = 'Replace with Value';
             }
         }
 
@@ -271,37 +271,47 @@ WRAPROWS</textarea>
                     const cell = worksheet[cellAddress];
                     if (cell.f && functionRegex.test(cell.f)) {
                         const originalFormula = cell.f;
+                        const originalValue = originalWorkbook.Sheets[sheetName][cellAddress]?.v;
 
                         if (selectedAction === 'highlight') {
                             const redFillStyle = { fill: { patternType: "solid", fgColor: { rgb: "FFFF0000" } } };
                             cell.s = { ...cell.s, ...redFillStyle };
                             processedItems.push(`${sheetName}!${cellAddress}`);
                         
-                        } else { // Common logic for both wrap actions
-                            const originalValue = originalWorkbook.Sheets[sheetName][cellAddress]?.v;
+                        } else if (selectedAction === 'wrap-excel') {
                             let fallbackValue;
-
-                            if (originalValue === undefined || originalValue === null) {
-                                fallbackValue = '""'; // Default to empty string
-                            } else if (typeof originalValue === 'string') {
-                                fallbackValue = `"${originalValue.replace(/"/g, '""')}"`;
-                            } else if (typeof originalValue === 'number' || typeof originalValue === 'boolean') {
-                                fallbackValue = originalValue;
-                            } else {
-                                fallbackValue = '"#VALUE!"';
-                            }
+                            if (originalValue === undefined || originalValue === null) fallbackValue = '""';
+                            else if (typeof originalValue === 'string') fallbackValue = `"${originalValue.replace(/"/g, '""')}"`;
+                            else if (typeof originalValue === 'number' || typeof originalValue === 'boolean') fallbackValue = originalValue;
+                            else fallbackValue = '"#VALUE!"';
                             
-                            let newFormula;
-                            if (selectedAction === 'wrap-excel') {
-                                const escapedFormula = originalFormula.replace(/"/g, '""');
-                                newFormula = `=IFERROR(__xludf.DUMMYFUNCTION("${escapedFormula}"), ${fallbackValue})`;
-                            } else { // wrap-gsheets
-                                newFormula = `=IFERROR(${originalFormula}, ${fallbackValue})`;
-                            }
+                            const escapedFormula = originalFormula.replace(/"/g, '""');
+                            const newFormula = `=IFERROR(__xludf.DUMMYFUNCTION("${escapedFormula}"), ${fallbackValue})`;
                             
                             cell.f = newFormula;
                             delete cell.v; 
                             processedItems.push({ sheet: sheetName, cell: cellAddress, original: originalFormula, converted: newFormula });
+                        
+                        } else { // wrap-gsheets: Replace with static value and add comment
+                            // 1. Remove the formula
+                            delete cell.f;
+
+                            // 2. Set the static value and type
+                            cell.v = originalValue;
+                            if (typeof originalValue === 'string') cell.t = 's';
+                            else if (typeof originalValue === 'number') cell.t = 'n';
+                            else if (typeof originalValue === 'boolean') cell.t = 'b';
+                            else if (originalValue instanceof Date) cell.t = 'd';
+                            else { // If value is undefined or null, make it an empty string cell
+                                cell.v = "";
+                                cell.t = 's';
+                            }
+                            
+                            // 3. Add the original formula as a comment
+                            if (!cell.c) cell.c = [];
+                            cell.c.push({a: "Converter", t: originalFormula});
+
+                            processedItems.push({ sheet: sheetName, cell: cellAddress, original: originalFormula, converted: `Value: ${cell.v} (Formula moved to comment)` });
                         }
                     }
                 }
@@ -321,12 +331,12 @@ WRAPROWS</textarea>
                     resultsOutput.innerHTML = `<p class="font-semibold mb-2">Found and highlighted ${items.length} cell(s):</p>
                                                <ul class="list-disc list-inside text-gray-600 font-mono text-sm">${items.map(c => `<li>${c}</li>`).join('')}</ul>`;
                 } else { // wrap-excel or wrap-gsheets
-                    let tableHtml = `<p class="font-semibold mb-2">Wrapped ${items.length} formula(s):</p>
+                    let tableHtml = `<p class="font-semibold mb-2">Processed ${items.length} formula(s):</p>
                                      <table class="w-full text-left">
                                        <thead><tr>
                                          <th class="table-cell table-header">Cell</th>
                                          <th class="table-cell table-header">Original Formula</th>
-                                         <th class="table-cell table-header">New Wrapped Formula</th>
+                                         <th class="table-cell table-header">Action Taken</th>
                                        </tr></thead><tbody>`;
                     items.forEach(item => {
                         tableHtml += `<tr>
